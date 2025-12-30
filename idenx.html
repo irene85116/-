@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>This art studio ———— ♡ 李氏美學</title>
+    <link rel="apple-touch-icon" href="app-icon.png">
+<link rel="icon" type="image/png" href="app-icon.png">
+<meta name="apple-mobile-web-app-title" content="李氏美學">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --lavender: #E6E6FA; --dark-lavender: #9686B3; --bg: #FAF9FF; --text: #4A4A4A; --red: #D32F2F; --gray: #BDC3C7; --pink: #FFE4E1; --green: #4CAF50; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 200px; }
+        
+        #edit-mode-indicator { display: none; background: #FFF9C4; color: #827717; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: bold; border-bottom: 2px solid #FBC02D; position: sticky; top: 0; z-index: 1001; }
+        
+        .header { text-align: center; padding: 30px 0; background: linear-gradient(180deg, var(--lavender), var(--bg)); }
+        .header .en { font-family: 'Dancing Script', cursive; font-size: 2rem; color: var(--dark-lavender); margin: 0; }
+        .header .cn { font-size: 1.1rem; letter-spacing: 3px; margin: 5px 0; font-weight: 300; }
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(230,230,250,0.4); }
+        h3 { font-size: 1rem; color: var(--dark-lavender); border-left: 5px solid var(--lavender); padding-left: 12px; margin: 15px 0; }
+        .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; }
+        .input-group { display: flex; align-items: center; gap: 5px; }
+        input, select { border: 1px solid var(--lavender); border-radius: 8px; padding: 6px; outline: none; font-size: 0.9rem; }
+        .warning { color: var(--red); font-size: 0.75rem; width: 100%; display: none; margin-top: 4px; font-weight: 600; }
+        .dashed-tag { border: 1px dashed var(--dark-lavender); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; background: #fff; }
+        .gift-area { font-size: 0.75rem; color: #777; display: flex; align-items: center; gap: 2px; }
+        .discount-hint { font-size: 0.85rem; color: var(--red); font-weight: 600; display: block; margin-top: 5px; }
+        
+        .sticky-footer { position: fixed; bottom: 0; width: 100%; background: rgba(255,255,255,0.96); backdrop-filter: blur(8px); border-top: 1px solid var(--lavender); padding: 15px; box-sizing: border-box; z-index: 1000; }
+        .live-total { font-size: 1.25rem; font-weight: bold; color: var(--dark-lavender); text-align: center; margin-bottom: 12px; }
+        .live-total.error { color: var(--red); font-size: 1rem; }
+        .btn-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 600px; margin: 0 auto; }
+        .btn { border: none; padding: 12px 5px; border-radius: 25px; cursor: pointer; font-size: 0.85rem; font-weight: 500; text-align: center; }
+        .btn-save { background: var(--lavender); color: var(--dark-lavender); }
+        .btn-copy { background: var(--dark-lavender); color: white; }
+        .btn-reset { background: var(--pink); color: var(--red); }
+        .btn:disabled { background: var(--gray) !important; color: #fff !important; cursor: not-allowed; opacity: 0.5; }
+
+        .record-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(150,134,179,0.15); position: relative; }
+        .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .record-amount { font-size: 1.3rem; color: var(--dark-lavender); font-weight: 800; }
+        .record-detail { font-size: 0.85rem; color: #555; background: #FDFBFF; padding: 10px; border-radius: 10px; border: 1px dashed var(--lavender); line-height: 1.6; }
+        .record-actions { display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid #F0F0F0; padding-top: 15px; }
+        .btn-edit-rec { flex: 1; background: #F3E5F5; color: var(--dark-lavender); border: 1px solid var(--lavender); padding: 8px; border-radius: 10px; cursor: pointer; }
+        .btn-del-rec { flex: 1; background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDD2; padding: 8px; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="calc-view">
+    <div id="edit-mode-indicator">⚠️ 正在編輯舊紀錄，儲存後將覆蓋原資料</div>
+    <div class="header"><p class="en">This art studio</p><p class="cn">———— ♡ 李氏美學</p></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="row">
+                <input type="text" id="custName" placeholder="顧客姓名" style="width: 45%;">
+                <input type="date" id="dateInput" style="width: 45%;">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>輕薄型凝膠</h3>
+            <div class="row">
+                <label><input type="checkbox" id="thin_1" class="base-option" data-name="輕薄單色凝膠" data-price="300"> 單色凝膠 $300</label>
+                <label><input type="checkbox" id="thin_2" class="base-option" data-name="輕薄璀璨凝膠" data-price="300"> 璀璨凝膠 $300</label>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="thin_jump_chk"> 跳色加價</label>
+                <select id="thin_jump_val">
+                    <option value="0">請選擇金額</option>
+                    <option value="100">1~2色 $100</option><option value="200">3~4色 $200</option>
+                    <option value="300">5~6色 $300</option><option value="400">7~8色 $400</option><option value="500">9~10色 $500</option>
+                </select>
+                <div id="warn_thin_jump" class="warning">⚠️ 請選擇加價金額</div>
+            </div>
+            <div class="row"><span class="dashed-tag"><input type="checkbox" id="hard_skin" data-name="指緣與兩側硬皮修護" data-price="350"> 指緣與兩側硬皮修護 $350</span></div>
+        </div>
+
+        <div class="card">
+            <h3>健甲型凝膠</h3>
+            <div class="row">
+                <label><input type="checkbox" id="thick_1" class="base-option" data-name="健甲單色" data-price="600"> 單色 $600</label>
+                <label><input type="checkbox" id="thick_2" class="base-option" data-name="健甲璀璨" data-price="600"> 璀璨 $600</label>
+                <label><input type="checkbox" id="thick_3" class="base-option" data-name="健甲貓眼" data-price="800"> 貓眼 $800</label>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="thick_4" class="base-option" data-name="健甲法式" data-price="1000"> 法式 $1000</label>
+                <label><input type="checkbox" id="thick_5" class="base-option" data-name="純色漸層" data-price="1000"> 純色漸層 $1000</label>
+                <label><input type="checkbox" id="thick_6" class="base-option" data-name="雙色漸層" data-price="1200"> 雙色漸層 $1200</label>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="thick_jump_chk"> 跳色加價</label>
+                <select id="thick_jump_val">
+                    <option value="0">請選擇金額</option>
+                    <option value="100">1~2色 $100</option><option value="200">3~4色 $200</option>
+                    <option value="300">5~6色 $300</option><option value="400">7~8色 $400</option><option value="500">9~10色 $500</option>
+                </select>
+                <div id="warn_thick_jump" class="warning">⚠️ 請選擇加價金額</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>延甲與加固修補</h3>
+            <div class="row">
+                <label><input type="checkbox" id="ext_chk" data-name="基礎凝膠延甲"> 基礎凝膠延甲 $150/指</label>
+                <div class="input-group">
+                    <input type="number" id="ext_n" placeholder="指" style="width:40px;">
+                    <div class="gift-area">贈<input type="number" id="ext_g" style="width:30px;"></div>
+                </div>
+                <div id="warn_ext" class="warning">⚠️ 數量錯誤</div>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="fix_chk" data-name="凝膠加固修補"> 凝膠加固修補 $100/指</label>
+                <div class="input-group">
+                    <input type="number" id="fix_n" placeholder="指" style="width:40px;">
+                    <div class="gift-area">贈<input type="number" id="fix_g" style="width:30px;"></div>
+                </div>
+                <div id="warn_fix" class="warning">⚠️ 數量錯誤</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>卸甲服務</h3>
+            <div class="row">
+                <label><input type="checkbox" id="rem_s" data-name="本店卸甲續做" data-price="200"> 本店卸甲續做 $200</label>
+                <label class="gift-area"><input type="checkbox" id="rem_s_g"> 贈送</label>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="rem_o" data-name="他店卸甲續做" data-price="300"> 他店卸甲續做 $300</label>
+                <label class="gift-area"><input type="checkbox" id="rem_o_g"> 贈送</label>
+            </div>
+            <div class="row"><label><input type="checkbox" id="rem_pure" class="st-rem" data-name="純卸甲不含保養" data-price="500"> 純卸甲不含保養 $500</label></div>
+            <div class="row"><label><input type="checkbox" id="rem_base" class="st-rem" data-name="卸甲及基礎保養" data-price="800"> 卸甲及基礎保養 $800</label></div>
+        </div>
+
+        <div class="card">
+            <h3>帶圖仿做款收費</h3>
+            <div class="row">
+                <label><input type="checkbox" id="copy_chk"> 帶圖仿做</label>
+                <select id="copy_style" style="width: 60%;">
+                    <option value="0">請選擇風格與類型</option>
+                    <option value="1000">簡約 2-4指 $1000</option><option value="1100">簡約 4-6指 $1100</option><option value="1200">簡約 6-8指 $1200</option><option value="1300">簡約 8-10指 $1300</option>
+                    <option value="1100">中階 2-4指 $1100</option><option value="1200">中階 4-6指 $1200</option><option value="1300">中階 6-8指 $1300</option><option value="1400">中階 8-10指 $1400</option>
+                    <option value="1300">進階 2-4指 $1300</option><option value="1400">進階 4-6指 $1400</option><option value="1500">進階 6-8指 $1500</option><option value="1600">進階 8-10指 $1600</option>
+                </select>
+                <div id="warn_copy" class="warning">⚠️ 勾選帶圖仿做後，請選擇風格金額</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>單指造型細項</h3>
+            <div id="detail_box"></div>
+            <div id="warn_detail_all" class="warning">⚠️ 勾選項目金額需為 0-1000 並填寫指數</div>
+        </div>
+
+        <div class="card">
+            <h3>折扣與結算</h3>
+            <div class="row">
+                <label>活動折扣</label>
+                <select id="discount_rate">
+                    <option value="1">無折扣</option><option value="0.95">95折</option><option value="0.9">9折</option><option value="0.85">85折</option><option value="0.8">8折</option>
+                </select>
+                <span id="disc_money_hint" class="discount-hint"></span>
+            </div>
+            <div class="row">
+                <span style="font-size:0.8rem; color:#666;">贈送折抵: $<span id="gift_sum_text">0</span></span>
+                <div class="input-group">手動減價 <input type="number" id="manual_off" style="width:60px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sticky-footer">
+        <div id="total_display" class="live-total">實收金額：$0</div>
+        <div class="btn-box">
+            <button class="btn" style="background:#eee;" onclick="toggleAdmin(true)">管理</button>
+            <button class="btn btn-reset" onclick="resetForm()">清空</button>
+            <button id="btn_save" class="btn btn-save" onclick="saveData()">儲存</button>
+            <button id="btn_copy" class="btn btn-copy" onclick="copyQuote()">複製</button>
+        </div>
+    </div>
+</div>
+
+<div id="admin-view" style="display:none;" class="container">
+    <div class="header">
+        <p class="en">Payment Records</p>
+        <button onclick="toggleAdmin(false)" class="btn btn-copy" style="padding: 8px 20px;">返回首頁</button>
+    </div>
+    <div id="history_list"></div>
+</div>
+
+<script>
+    const styleData = [
+        {n:"珍珠設計", p:35}, {n:"線條設計", p:30}, {n:"色塊設計", p:35}, {n:"貼紙設計", p:55},
+        {n:"暈染設計", p:75}, {n:"鏡面設計", p:100}, {n:"鉚釘設計", p:55}, {n:"貝殼設計", p:50},
+        {n:"鋯石設計", p:85}, {n:"手繪設計", p:350}, {n:"鑽飾設計", p:55}, {n:"乾燥花設計", p:45},
+        {n:"亮片、金箔", p:35}, {n:"施華洛世奇水鑽", p:165}, {n:"其他設計(1)", p:130}, {n:"其他設計(2)", p:130}, {n:"其他設計(3)", p:130}
+    ];
+
+    let editingId = null;
+
+    function init() {
+        const box = document.getElementById('detail_box');
+        styleData.forEach((s) => {
+            box.innerHTML += `
+                <div class="row d-row">
+                    <label style="font-size:0.85rem;"><input type="checkbox" class="d-chk" data-name="${s.n}"> ${s.n}</label>
+                    <div class="input-group">
+                        <input type="number" class="d-p" value="${s.p}" min="0" max="1000" style="width:45px;">
+                        <input type="number" class="d-n" placeholder="指" style="width:35px;">
+                        贈<input type="number" class="d-g" style="width:25px;">
+                    </div>
+                </div>`;
+        });
+
+        // 基礎型單選監聽
+        const bases = document.querySelectorAll('.base-option');
+        bases.forEach(b => b.addEventListener('click', function() {
+            if(this.checked) bases.forEach(o => { if(o !== this) o.checked = false; });
+            calc();
+        }));
+
+        // 卸甲互相排斥監聽
+        document.getElementById('rem_s').addEventListener('change', function() { if(this.checked) document.getElementById('rem_o').checked = false; calc(); });
+        document.getElementById('rem_o').addEventListener('change', function() { if(this.checked) document.getElementById('rem_s').checked = false; calc(); });
+
+        // 全域監聽（確保所有輸入變動都會即時計算）
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', calc);
+            el.addEventListener('change', calc);
+        });
+
+        document.getElementById('dateInput').value = new Date().toLocaleDateString('en-CA');
+        calc();
+    }
+
+    function resetForm(keepEditState = false) {
+        if(!keepEditState && !confirm("確定要清空目前所有選項嗎？")) return;
+        document.getElementById('custName').value = "";
+        document.getElementById('manual_off').value = "";
+        document.getElementById('discount_rate').value = "1";
+        document.getElementById('dateInput').value = new Date().toLocaleDateString('en-CA');
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[type="number"]').forEach(num => num.value = "");
+        document.querySelectorAll('select').forEach(sel => { if(sel.id !== 'discount_rate') sel.selectedIndex = 0; });
+        document.querySelectorAll('.warning').forEach(w => w.style.display = 'none');
+        if(!keepEditState) exitEditMode();
+        calc();
+    }
+
+    function calc() {
+        let raw = 0, gift = 0, err = false, list = [];
+        
+        // 基礎型
+        const base = document.querySelector('.base-option:checked');
+        if(base) { let p = parseInt(base.dataset.price); raw += p; list.push(`• ${base.dataset.name}: $${p}`); }
+
+        // 跳色加價防呆
+        const jump = (cid, vid, wid, lab) => {
+            if(document.getElementById(cid).checked) {
+                let v = parseInt(document.getElementById(vid).value);
+                if(v===0){ document.getElementById(wid).style.display='block'; err=true; }
+                else { document.getElementById(wid).style.display='none'; raw+=v; list.push(`• ${lab}跳色加價: $${v}`); }
+            } else document.getElementById(wid).style.display='none';
+        }
+        jump('thin_jump_chk','thin_jump_val','warn_thin_jump','輕薄型');
+        jump('thick_jump_chk','thick_jump_val','warn_thick_jump','健甲型');
+        
+        if(document.getElementById('hard_skin').checked){ raw+=350; list.push(`• 指緣與硬皮修護: $350`); }
+
+        // 延甲/加固
+        const num = (cid, nid, gid, wid, pr, lab) => {
+            if(document.getElementById(cid).checked) {
+                let n = parseInt(document.getElementById(nid).value)||0, g = parseInt(document.getElementById(gid).value)||0;
+                if(n<=0 || g>n){ document.getElementById(wid).style.display='block'; err=true; }
+                else { raw += n*pr; gift += g*pr; list.push(`• ${lab}: ${n}指${g>0?`(贈${g}指)`:""} $${n*pr}`); }
+            } else document.getElementById(wid).style.display='none';
+        }
+        num('ext_chk','ext_n','ext_g','warn_ext',150,'延甲');
+        num('fix_chk','fix_n','fix_g','warn_fix',100,'加固修補');
+
+        // 卸甲邏輯
+        if(document.getElementById('rem_s').checked){ 
+            raw+=200; let txt = `• 本店卸甲續做: $200`;
+            if(document.getElementById('rem_s_g').checked){ gift+=200; txt += " (贈送)"; }
+            list.push(txt);
+        }
+        if(document.getElementById('rem_o').checked){ 
+            raw+=300; let txt = `• 他店卸甲續做: $300`;
+            if(document.getElementById('rem_o_g').checked){ gift+=300; txt += " (贈送)"; }
+            list.push(txt);
+        }
+        document.querySelectorAll('.st-rem:checked').forEach(e => { raw+=parseInt(e.dataset.price); list.push(`• ${e.dataset.name}: $${e.dataset.price}`); });
+
+        // 帶圖仿做防呆 (關鍵修復邏輯)
+        const copyChk = document.getElementById('copy_chk');
+        const copyStyle = document.getElementById('copy_style');
+        const warnCopy = document.getElementById('warn_copy');
+        
+        if(copyChk.checked){
+            let v = parseInt(copyStyle.value);
+            if(v === 0) {
+                warnCopy.style.display = 'block';
+                err = true; // 鎖定儲存按鈕
+            } else {
+                warnCopy.style.display = 'none';
+                raw += v;
+                list.push(`• 帶圖仿做(${copyStyle.options[copyStyle.selectedIndex].text}): $${v}`);
+            }
+        } else {
+            warnCopy.style.display = 'none';
+        }
+
+        // 造型細項防呆
+        let dErr = false;
+        document.querySelectorAll('.d-row').forEach(r => {
+            if(r.querySelector('.d-chk').checked){
+                let p=parseInt(r.querySelector('.d-p').value)||0, n=parseInt(r.querySelector('.d-n').value)||0, g=parseInt(r.querySelector('.d-g').value)||0;
+                if(p < 0 || n <= 0 || g > n){ dErr=true; err=true; }
+                else { raw+=p*n; gift+=p*g; list.push(`• ${r.querySelector('.d-chk').dataset.name}: ${n}指${g>0?`(贈${g}指)`:""} $${p*n}`); }
+            }
+        });
+        document.getElementById('warn_detail_all').style.display = dErr?'block':'none';
+
+        // 結算金額
+        const dr = parseFloat(document.getElementById('discount_rate').value);
+        const mo = parseInt(document.getElementById('manual_off').value)||0;
+        const discountableAmount = raw - gift;
+        const discMoney = Math.round(discountableAmount * (1-dr));
+        
+        if(dr < 1 && discountableAmount > 0) {
+            document.getElementById('disc_money_hint').innerText = `折扣折抵：-$${discMoney}`;
+            list.push(`• 活動折扣(${Math.round(dr*100)}折): -$${discMoney}`);
+        } else { document.getElementById('disc_money_hint').innerText = ""; }
+
+        if(mo > 0) list.push(`• 手動減價: -$${mo}`);
+        const total = Math.max(0, discountableAmount - discMoney - mo);
+        
+        // 更新顯示與按鈕鎖定
+        const display = document.getElementById('total_display');
+        display.innerText = err ? "⚠️ 項目輸入不完全" : `實收金額：$${total}`;
+        display.classList.toggle('error', err);
+        document.getElementById('btn_save').disabled = err;
+        document.getElementById('btn_copy').disabled = err;
+        document.getElementById('gift_sum_text').innerText = gift;
+        
+        return { total, detailText: list.join('\n') };
+    }
+
+    function saveData() {
+        const res = calc();
+        const cName = document.getElementById('custName').value || "未填姓名";
+        const formState = {
+            checkboxes: Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => ({ id: cb.id, checked: cb.checked })),
+            inputs: Array.from(document.querySelectorAll('input[type="number"], input[type="text"], input[type="date"]')).filter(i=>i.id).map(i => ({ id: i.id, value: i.value })),
+            selects: Array.from(document.querySelectorAll('select')).map(s => ({ id: s.id, value: s.value })),
+            detailsData: Array.from(document.querySelectorAll('.d-row')).map(row => ({
+                name: row.querySelector('.d-chk').dataset.name,
+                checked: row.querySelector('.d-chk').checked,
+                price: row.querySelector('.d-p').value,
+                num: row.querySelector('.d-n').value,
+                gift: row.querySelector('.d-g').value
+            }))
+        };
+
+        let db = JSON.parse(localStorage.getItem('nails_final_v11')||'[]');
+        if (editingId) {
+            const idx = db.findIndex(r => r.id === editingId);
+            if(idx !== -1) db[idx] = { id: editingId, custName: cName, amount: res.total, date: document.getElementById('dateInput').value, details: res.detailText, state: formState };
+            alert("紀錄已更新！");
+            exitEditMode();
+        } else {
+            db.push({ id: Date.now(), custName: cName, amount: res.total, date: document.getElementById('dateInput').value, details: res.detailText, state: formState });
+            alert("實收紀錄已儲存！");
+        }
+        localStorage.setItem('nails_final_v11', JSON.stringify(db));
+        calc();
+    }
+
+    function editRecord(id) {
+        const db = JSON.parse(localStorage.getItem('nails_final_v11')||'[]');
+        const record = db.find(r => r.id === id);
+        if(!record || !record.state) return alert("無法編輯此紀錄。");
+
+        editingId = id;
+        resetForm(true);
+
+        record.state.checkboxes.forEach(cb => { if(cb.id) { let el = document.getElementById(cb.id); if(el) el.checked = cb.checked; }});
+        record.state.inputs.forEach(i => { let el = document.getElementById(i.id); if(el) el.value = i.value; });
+        record.state.selects.forEach(s => { let el = document.getElementById(s.id); if(el) el.value = s.value; });
+        
+        if(record.state.detailsData) {
+            record.state.detailsData.forEach(item => {
+                document.querySelectorAll('.d-row').forEach(row => {
+                    if(row.querySelector('.d-chk').dataset.name === item.name) {
+                        row.querySelector('.d-chk').checked = item.checked;
+                        row.querySelector('.d-p').value = item.price;
+                        row.querySelector('.d-n').value = item.num;
+                        row.querySelector('.d-g').value = item.gift;
+                    }
+                });
+            });
+        }
+
+        document.getElementById('edit-mode-indicator').style.display = 'block';
+        document.getElementById('btn_save').innerText = "更新紀錄";
+        document.getElementById('btn_save').style.background = "var(--green)";
+        document.getElementById('btn_save').style.color = "white";
+        toggleAdmin(false);
+        calc();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function exitEditMode() {
+        editingId = null;
+        document.getElementById('edit-mode-indicator').style.display = 'none';
+        const btn = document.getElementById('btn_save');
+        btn.innerText = "儲存";
+        btn.style.background = "var(--lavender)";
+        btn.style.color = "var(--dark-lavender)";
+    }
+
+    function deleteRecord(id) {
+        if(!confirm("確定要刪除這筆紀錄嗎？")) return;
+        let db = JSON.parse(localStorage.getItem('nails_final_v11')||'[]');
+        localStorage.setItem('nails_final_v11', JSON.stringify(db.filter(i => i.id !== id)));
+        toggleAdmin(true); 
+    }
+
+    function copyQuote() {
+        const res = calc();
+        const msg = `This art studio ———— ♡ 李氏美學\n【服務明細單】\n日期：${document.getElementById('dateInput').value}\n--------------------\n${res.detailText}\n--------------------\n實收金額：$${res.total}\n*實際收費依現場為主 ♡ 感謝您的信任與支持 ♡`;
+        navigator.clipboard.writeText(msg).then(() => alert("明細報價單已複製"));
+    }
+
+    function toggleAdmin(show) {
+        document.getElementById('calc-view').style.display = show?'none':'block';
+        document.getElementById('admin-view').style.display = show?'block':'none';
+        if(show){
+            const h = document.getElementById('history_list'); h.innerHTML = '';
+            const db = JSON.parse(localStorage.getItem('nails_final_v11')||'[]');
+            if(db.length === 0) h.innerHTML = '<p style="text-align:center; color:#999; margin-top:50px;">暫無消費紀錄</p>';
+            db.slice().reverse().forEach(r => {
+                h.innerHTML += `
+                    <div class="record-card">
+                        <div class="record-header">
+                            <div><span style="font-weight:bold; font-size:1.1rem;">${r.custName}</span><br><small style="color:#999;">${r.date}</small></div>
+                            <div class="record-amount">$${r.amount}</div>
+                        </div>
+                        <div class="record-detail">${r.details.replace(/\n/g, '<br>')}</div>
+                        <div class="record-actions">
+                            <button class="btn-edit-rec" onclick="editRecord(${r.id})">修改紀錄</button>
+                            <button class="btn-del-rec" onclick="deleteRecord(${r.id})">刪除</button>
+                        </div>
+                    </div>`;
+            });
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>
